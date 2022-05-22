@@ -8,31 +8,34 @@ import { createTheme, ThemeProvider } from '@mui/material/styles'
 
 import { Web3ReactProvider } from '@web3-react/core'
 import { Web3Provider } from '@ethersproject/providers'
-import UAuth from '@uauth/js'
+import {uauth} from './libs/connectors'
 
 
 const theme = createTheme()
 
 
-const uauth = new UAuth({
-  // ... options
-})
 
 
 class App extends React.Component {
   constructor(props){
     super(props)
     this.state = {
-      history:''
+      history:'',
+      user:'',
     }
   }
   componentDidMount(){
-    uauth.user()
+    uauth.uauth.user()
   .then((user) => {
     // user exists
-    console.log("User information:", user)
+    console.log({user})
+    secureStorage.setItem('user',user)
+    this.setState({user})
   })
-  .catch(() => {
+  .catch(err => {
+    console.log(err)
+    secureStorage.removeItem('user')
+    this.setState({user:''})
     // user does not exist
   })
     // console.log(secureStorage.getItem('token'))
@@ -52,8 +55,16 @@ class App extends React.Component {
         <ThemeProvider theme={theme}>
           <Router history={this.state.history}>
             <Switch>
+              
               <Route path="/login" component={Login} />
               <PrivateRoute path="/" component={Main} />
+              
+              {/* <Route path="/" render={props=>
+                this.state.user?
+                <Main {...props} />
+                :
+                <Redirect to='/login' />
+              } /> */}
             </Switch>
           </Router>
         </ThemeProvider>
@@ -62,11 +73,12 @@ class App extends React.Component {
   }
 }
 function PrivateRoute({ component: Component, ...rest }) {
+  console.log('test1')
   return (
     <Route
       {...rest}
       render={props =>  
-        secureStorage.getItem('token') ? 
+        secureStorage.getItem('user') ? 
         <Component {...props} />
         : 
         <Redirect to='/login' />

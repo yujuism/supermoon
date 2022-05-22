@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {useState,useEffect} from 'react'
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -11,12 +12,15 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import {  Redirect } from 'react-router-dom'
 
 import {useWeb3React} from '@web3-react/core'
 import {WalletConnectConnector} from '@web3-react/walletconnect-connector'
 import {uauth} from '../../libs/connectors'
+import secureStorage from '../../libs/secureStorage'
 
-import UAuth from '@uauth/js'
+
+// import UAuth from '@uauth/js'
 
 function Copyright(props) {
   return (
@@ -34,11 +38,32 @@ function Copyright(props) {
 
 
 function SignIn() {
+  const [user,setUser] = useState('')
   const {activate} = useWeb3React()
+
+  useEffect(()=>{
+    const user = secureStorage.getItem('user')
+    if(user){
+      // console.log({user})
+      setUser(user)
+    }
+  },[])
+
   async function handleUAuthConnect() {
   
     const test = await activate(uauth)
-    console.log(test)
+    // console.log(test)
+    uauth.uauth.user()
+    .then((user) => {
+      // user exists
+      setUser(user)
+    })
+    .catch(err => {
+      console.log(err)
+      secureStorage.removeItem('user')
+      setUser('')
+      // user does not exist
+    })
   }
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -48,6 +73,11 @@ function SignIn() {
       password: data.get('password'),
     })
   }
+  if(user) {
+    console.log({user,u:secureStorage.getItem('user')})
+    return <Redirect to="/" />
+  } 
+  else
   return (
     
     <Container component="main" maxWidth="xs">
